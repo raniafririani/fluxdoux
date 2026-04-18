@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FluxDoux - Bienvenue</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #f9f7f2;
+            --accent-color: #b5a48b;
+            --text-main: #4a4a4a;
+            --glass-bg: rgba(255, 255, 255, 0.8);
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: url('https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?q=80&w=2067&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(249, 247, 242, 0.6);
+            z-index: 1;
+        }
+
+        .login-container {
+            position: relative;
+            z-index: 2;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            padding: 50px 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .brand-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 32px;
+            font-style: italic;
+            color: var(--accent-color);
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 35px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .input-group { margin-bottom: 20px; text-align: left; }
+        .input-group label {
+            font-size: 11px;
+            color: var(--accent-color);
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: block;
+            text-transform: uppercase;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 1px solid #e0ddd5;
+            background: rgba(255,255,255,0.5);
+            outline: none;
+            transition: 0.3s;
+            box-sizing: border-box;
+        }
+
+        .input-group input:focus { border-color: var(--accent-color); background: white; }
+
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-login:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        #message { font-size: 12px; margin-top: 15px; min-height: 18px; }
+
+        .footer-text { margin-top: 25px; font-size: 13px; color: #777; }
+        .footer-text a { color: var(--accent-color); text-decoration: none; font-weight: 600; }
+         /* --- LOGIKA RESPONSIF HP --- */
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 30px 20px; /* Padding lebih kecil di HP agar lega */
+                border-radius: 20px;
+            }
+            .brand-logo { font-size: 28px; }
+            input { padding: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <div class="brand-logo">FluxDoux</div>
+        <div class="subtitle">Management Harmonie</div>
+
+        <form id="loginForm">
+            <div class="input-group">
+                <label>Email</label>
+                <input type="email" id="email" placeholder="nama@email.com" required>
+            </div>
+            
+            <div class="input-group" id="nameGroup" style="display: none;">
+                <label>Nama Lengkap</label>
+                <input type="text" id="fullname" placeholder="Contoh: Rani Safitri">
+            </div>
+
+            <div class="input-group">
+                <label>Kata Sandi</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            
+            <button type="submit" class="btn-login" id="btnSubmit">Masuk ke Dashboard</button>
+        </form>
+
+        <div id="message"></div>
+
+        <div class="footer-text">
+            <span id="footerDesc">Belum punya akun?</span> 
+            <a href="#" id="toggleSignup">Daftar Sekarang</a>
+        </div>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const messageDiv = document.getElementById('message');
+        const toggleSignup = document.getElementById('toggleSignup');
+        const btnSubmit = document.getElementById('btnSubmit');
+        const nameGroup = document.getElementById('nameGroup');
+        const subtitle = document.querySelector('.subtitle');
+        const footerDesc = document.getElementById('footerDesc');
+
+        let isSignup = false;
+
+        // --- CEK AUTO LOGIN ---
+        // Kalau sudah ada status login di localStorage, langsung lempar ke index
+        if (localStorage.getItem('flux_isLoggedIn') === 'true') {
+            window.location.href = 'index.html';
+        }
+
+        // --- TOGGLE SIGNUP/LOGIN ---
+        toggleSignup.addEventListener('click', (e) => {
+            e.preventDefault();
+            isSignup = !isSignup;
+            if (isSignup) {
+                nameGroup.style.display = "block";
+                btnSubmit.innerText = "Buat Akun Baru";
+                subtitle.innerText = "Daftar Akun Baru";
+                footerDesc.innerText = "Sudah punya akun?";
+                toggleSignup.innerText = "Login";
+            } else {
+                nameGroup.style.display = "none";
+                btnSubmit.innerText = "Masuk ke Dashboard";
+                subtitle.innerText = "Management Harmonie";
+                footerDesc.innerText = "Belum punya akun?";
+                toggleSignup.innerText = "Daftar Sekarang";
+            }
+        });
+
+        // --- PROSES SUBMIT ---
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const fullname = document.getElementById('fullname').value;
+
+            if (isSignup) {
+                // REGISTRASI
+                const userData = { email, password, name: fullname || 'User' };
+                localStorage.setItem(`profile_${email}`, JSON.stringify(userData));
+                
+                messageDiv.style.color = "green";
+                messageDiv.innerText = "Registrasi Berhasil! Silakan Login.";
+                setTimeout(() => { toggleSignup.click(); }, 1000);
+            } else {
+                // LOGIN
+                const storedData = localStorage.getItem(`profile_${email}`);
+                if (storedData) {
+                    const user = JSON.parse(storedData);
+                    if (user.password === password) {
+                        messageDiv.style.color = "green";
+                        messageDiv.innerText = "Login Berhasil...";
+                        
+                        // KUNCI AGAR TIDAK PERLU LOGIN ULANG
+                        localStorage.setItem('flux_currentUser', email);
+                        localStorage.setItem('flux_isLoggedIn', 'true');
+
+                        setTimeout(() => { window.location.href = 'index.html'; }, 800);
+                    } else {
+                        messageDiv.style.color = "red";
+                        messageDiv.innerText = "Password salah!";
+                    }
+                } else {
+                    messageDiv.style.color = "red";
+                    messageDiv.innerText = "Email tidak ditemukan.";
+                }
+            }
+        });
+    </script>
+</body>
+</html>

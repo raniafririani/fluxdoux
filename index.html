@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FluxDoux - Dashboard</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f9f7f2;
+            --sidebar-bg: #fffdf9;
+            --card-bg: #ffffff;
+            --accent-color: #b5a48b;
+            --accent-light: #f2ede4;
+            --text-main: #4a4a4a;
+            --positive: #a8bfa1;
+            --negative: #d9a88f;
+            --sidebar-width: 260px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--bg-color); color: var(--text-main); display: flex; min-height: 100vh; }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sidebar-width); height: 100vh; background: var(--sidebar-bg);
+            border-right: 1px solid #eeeae0; position: fixed; display: flex; flex-direction: column; padding: 20px;
+        }
+        .brand {
+            font-family: 'Playfair Display', serif; font-size: 24px; font-style: italic; font-weight: 700;
+            color: var(--accent-color); margin-bottom: 30px; text-align: center; padding-bottom: 20px; border-bottom: 1px solid #f0e9dc;
+        }
+        .menu-list { list-style: none; flex-grow: 1; }
+        .menu-item a {
+            text-decoration: none; color: var(--text-main); display: flex; align-items: center;
+            padding: 12px 15px; border-radius: 8px; transition: 0.3s; font-size: 14px;
+        }
+        .menu-item a i { margin-right: 12px; width: 20px; color: var(--accent-color); }
+        .menu-item a:hover { background: var(--accent-light); color: var(--accent-color); }
+
+        /* USER PROFILE SIDEBAR */
+        .sidebar-footer { border-top: 1px solid #f0e9dc; padding-top: 20px; margin-top: auto; }
+        .user-profile { 
+            display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 12px; 
+            transition: 0.3s; cursor: pointer; 
+        }
+        .user-profile:hover { background-color: var(--accent-light); }
+        .avatar { 
+            width: 45px; height: 45px; background-color: var(--accent-color); border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; color: white; 
+            font-weight: 600; overflow: hidden; flex-shrink: 0; 
+        }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+        .user-info { overflow: hidden; text-align: left; }
+        #userNameSidebar { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* MAIN CONTENT */
+        .main-content { margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)); padding: 40px; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .kpi-card { background: var(--card-bg); padding: 25px; border-radius: 15px; border: 1px solid #f0e9dc; box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
+        .kpi-value { font-size: 24px; font-weight: 600; margin-top: 10px; }
+
+        .lower-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 25px; }
+        .chart-container, .transactions-container { background: var(--card-bg); padding: 25px; border-radius: 15px; border: 1px solid #f0e9dc; }
+        .trans-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f9f7f2; font-size: 14px; }
+        
+        @media (max-width: 992px) {
+            .lower-grid { grid-template-columns: 1fr; }
+        }
+        /* --- RESPONSIVE LOGIC --- */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 70px; /* Sidebar jadi kecil di HP, cuma ikon saja */
+        padding: 10px;
+    }
+    .brand, #userNameSidebar, #userEmailSidebar {
+        display: none; /* Sembunyikan tulisan di sidebar HP */
+    }
+    .main-content {
+        margin-left: 70px; /* Sesuaikan margin content */
+        width: calc(100% - 70px);
+        padding: 20px;
+    }
+    .lower-grid {
+        grid-template-columns: 1fr; /* Grafik dan Riwayat jadi tumpuk vertikal */
+    }
+    .dashboard-grid {
+        grid-template-columns: 1fr; /* Kartu saldo jadi tumpuk vertikal */
+    }
+}
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="brand">FluxDoux</div>
+        <ul class="menu-list">
+            <li class="menu-item"><a href="index.html"><i class="fas fa-th-large"></i> Dashboard</a></li>
+            <li class="menu-item"><a href="pemasukan.html"><i class="fas fa-arrow-down"></i> Pemasukan</a></li>
+            <li class="menu-item"><a href="pengeluaran.html"><i class="fas fa-arrow-up"></i> Pengeluaran</a></li>
+            <li class="menu-item"><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt" style="color: #d9a88f;"></i> Keluar</a></li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <div class="user-profile" onclick="window.location.href='profile.html'">
+                <div class="avatar" id="userInitials">R</div>
+                <div class="user-info">
+                    <div id="userNameSidebar">User</div>
+                    <div id="userEmailSidebar" style="font-size: 11px; color: #888;">email@fluxdoux.com</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <div class="header-top">
+            <div>
+                <h1 id="welcomeGreeting" style="font-family: 'Playfair Display'; font-size: 28px;">Halo, User</h1>
+                <p id="currentDate" style="color: #888; font-size: 14px; margin-top: 5px;"></p>
+            </div>
+            <div style="display: flex; gap: 15px;">
+                <a href="pemasukan.html" title="Tambah Pemasukan"><i class="fas fa-plus-circle" style="color: var(--positive); font-size: 28px; cursor: pointer;"></i></a>
+                <a href="pengeluaran.html" title="Tambah Pengeluaran"><i class="fas fa-minus-circle" style="color: var(--negative); font-size: 28px; cursor: pointer;"></i></a>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="kpi-card">
+                <div style="font-size: 11px; color: #888; letter-spacing: 1px; font-weight: 600;">TOTAL SALDO</div>
+                <div class="kpi-value" id="displayTotalBalance">Rp 0</div>
+            </div>
+            <div class="kpi-card">
+                <div style="font-size: 11px; color: #888; letter-spacing: 1px; font-weight: 600;">TOTAL PEMASUKAN</div>
+                <div class="kpi-value" id="displayTotalIncome" style="color: var(--positive);">Rp 0</div>
+            </div>
+            <div class="kpi-card">
+                <div style="font-size: 11px; color: #888; letter-spacing: 1px; font-weight: 600;">TOTAL PENGELUARAN</div>
+                <div class="kpi-value" id="displayTotalExpense" style="color: var(--negative);">Rp 0</div>
+            </div>
+        </div>
+
+        <div class="lower-grid">
+            <div class="chart-container">
+                <h2 style="font-family: 'Playfair Display'; font-size: 18px; margin-bottom: 20px;">Arus Kas (Saldo Berjalan)</h2>
+                <div style="height: 250px;"><canvas id="cashFlowChart"></canvas></div>
+            </div>
+            <div class="transactions-container">
+                <h2 style="font-family: 'Playfair Display'; font-size: 18px; margin-bottom: 20px;">Riwayat Terakhir</h2>
+                <div id="listRecent"></div>
+            </div>
+        </div>
+    </main>
+
+<script>
+    const activeUserEmail = localStorage.getItem('flux_currentUser');
+    if (!activeUserEmail) { window.location.href = 'login.html'; }
+
+    function loadDashboard() {
+        const storageKey = `flux_transactions_${activeUserEmail}`;
+        const profileKey = `profile_${activeUserEmail}`;
+        const profileData = JSON.parse(localStorage.getItem(profileKey)) || { name: "User" };
+
+        // 1. UPDATE PROFIL
+        const avatarElement = document.getElementById('userInitials');
+        if (profileData.photo) {
+            avatarElement.innerHTML = `<img src="${profileData.photo}" alt="Profile">`;
+            avatarElement.style.background = "transparent";
+        } else {  
+            avatarElement.innerText = (profileData.name || "U").charAt(0).toUpperCase();
+            avatarElement.style.background = "var(--accent-color)";
+        }
+
+        const namaLengkap = profileData.name || "User";
+        document.getElementById('userNameSidebar').innerText = namaLengkap;
+        document.getElementById('userEmailSidebar').innerText = activeUserEmail;
+        document.getElementById('welcomeGreeting').innerText = "Halo, " + namaLengkap.split(' ')[0];
+
+        // 2. HITUNG TRANSAKSI
+        const transactions = JSON.parse(localStorage.getItem(storageKey)) || [];
+        let totalIn = 0;
+        let totalOut = 0;
+
+        // Pastikan angka bersih dari karakter aneh
+        transactions.forEach(t => {
+            const val = Number(t.amount) || 0;
+            if (t.type === 'in') totalIn += val;
+            else if (t.type === 'out') totalOut += val;
+        });
+
+        document.getElementById('displayTotalBalance').innerText = `Rp ${(totalIn - totalOut).toLocaleString('id-ID')}`;
+        document.getElementById('displayTotalIncome').innerText = `Rp ${totalIn.toLocaleString('id-ID')}`;
+        document.getElementById('displayTotalExpense').innerText = `Rp ${totalOut.toLocaleString('id-ID')}`;
+
+        updateRecentTransactions(transactions);
+        updateChart(transactions);
+    }
+
+    function updateRecentTransactions(transactions) {
+        const listContainer = document.getElementById('listRecent');
+        const lastFive = transactions.slice(-5).reverse();
+
+        if (lastFive.length === 0) {
+            listContainer.innerHTML = '<p style="text-align:center; color:#ccc; font-size:12px; margin-top:40px;">Belum ada riwayat transaksi.</p>';
+            return;
+        }
+
+        let html = '';
+        lastFive.forEach(t => {
+            const isInc = t.type === 'in';
+            html += `
+                <div class="trans-item">
+                    <div>
+                        <div style="font-weight:500;">${t.description}</div>
+                        <div style="font-size:11px; color:#aaa;">${t.date}</div>
+                    </div>
+                    <div style="color: ${isInc ? 'var(--positive)' : 'var(--negative)'}; font-weight:600;">
+                        ${isInc ? '+' : '-'}Rp ${Number(t.amount).toLocaleString('id-ID')}
+                    </div>
+                </div>`;
+        });
+        listContainer.innerHTML = html;
+    }
+
+    function updateChart(transactions) {
+        let chartData = [];
+        let labels = [];
+        let runningBalance = 0;
+        
+        // Ambil 10 transaksi terakhir untuk grafik saldo berjalan
+        const history = transactions.slice(-10);
+        
+        history.forEach((t, i) => {
+            const val = Number(t.amount) || 0;
+            if (t.type === 'in') runningBalance += val;
+            else runningBalance -= val;
+            
+            chartData.push(runningBalance);
+            labels.push(`T${i+1}`);
+        });
+
+        const ctx = document.getElementById('cashFlowChart').getContext('2d');
+        if (window.myChart) window.myChart.destroy();
+
+        window.myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: chartData,
+                    borderColor: '#b5a48b',
+                    backgroundColor: 'rgba(181, 164, 139, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointRadius: 5,
+                    pointBackgroundColor: '#b5a48b'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: false, grid: { color: '#f5f5f5' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    function logout() {
+        if (confirm("Yakin ingin keluar?")) {
+            localStorage.removeItem('flux_isLoggedIn');
+            localStorage.removeItem('flux_currentUser');
+            window.location.href = 'login.html';
+        }
+    }
+
+    window.onload = function() {
+        loadDashboard();
+        document.getElementById('currentDate').innerText = new Date().toLocaleDateString('id-ID', { 
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+        });
+    };
+</script>
+</body>
+</html>

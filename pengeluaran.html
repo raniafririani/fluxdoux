@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FluxDoux - Pengeluaran</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #f9f7f2;
+            --accent-color: #d9a88f; /* Warna khusus pengeluaran */
+            --card-bg: #ffffff;
+            --text-main: #4a4a4a;
+            --negative: #d9a88f;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-wrapper {
+            display: flex;
+            gap: 25px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        .expense-card, .report-card {
+            background: var(--card-bg);
+            flex: 1;
+            padding: 35px;
+            border-radius: 25px;
+            border: 1px solid #f0e9dc;
+            box-shadow: 0 10px 30px rgba(217, 168, 143, 0.1);
+        }
+
+        .header-title { text-align: center; margin-bottom: 25px; }
+        .header-title i { font-size: 35px; color: var(--negative); margin-bottom: 10px; }
+        
+        h2 { font-family: 'Playfair Display', serif; font-style: italic; color: var(--accent-color); font-size: 24px; }
+
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 10px; font-weight: 600; color: var(--accent-color); text-transform: uppercase; margin-bottom: 8px; }
+        
+        input {
+            width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #eeeae0; outline: none; box-sizing: border-box; font-family: 'Poppins', sans-serif;
+        }
+
+        .btn-save {
+            background: var(--accent-color); color: white; border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: 600; cursor: pointer; transition: 0.3s; margin-top: 10px;
+        }
+
+        .btn-save:hover { background: #c4957a; }
+
+        .report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #f0e9dc; padding-bottom: 10px; }
+        .report-list { max-height: 350px; overflow-y: auto; padding-right: 5px; }
+        
+        .report-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            padding: 12px 0; 
+            border-bottom: 1px dotted #eee; 
+            font-size: 14px; 
+        }
+
+        .report-info { flex-grow: 1; }
+        .amt { color: var(--negative); font-weight: 600; margin-right: 15px; white-space: nowrap; }
+        
+        .btn-delete {
+            color: #ccc;
+            cursor: pointer;
+            transition: 0.3s;
+            padding: 5px;
+        }
+        .btn-delete:hover { color: #ff6b6b; }
+        
+        .btn-back { display: block; text-align: center; margin-top: 20px; text-decoration: none; color: #aaa; font-size: 13px; transition: 0.3s; }
+        .btn-back:hover { color: var(--accent-color); }
+
+        @media (max-width: 768px) { .main-wrapper { flex-direction: column; } }
+        /* --- RESPONSIVE LOGIC --- */
+@media (max-width: 850px) {
+    .main-wrapper {
+        flex-direction: column; /* Form dan Riwayat jadi atas-bawah, bukan kiri-kanan */
+        align-items: center;
+    }
+    .income-card, .expense-card, .report-card {
+        width: 100%; /* Kartu jadi selebar layar HP */
+        max-width: none;
+    }
+}
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="expense-card">
+        <div class="header-title">
+            <i class="fas fa-arrow-circle-up"></i>
+            <h2>Pengeluaran</h2>
+        </div>
+        
+        <form id="expenseForm">
+            <div class="input-group">
+                <label>Deskripsi</label>
+                <input type="text" id="expenseDesc" placeholder="Contoh: Makan Siang" required>
+            </div>
+            <div class="input-group">
+                <label>Jumlah (Rp)</label>
+                <input type="text" id="expenseAmount" placeholder="0" required>
+            </div>
+            <div class="input-group">
+                <label>Tanggal</label>
+                <input type="date" id="expenseDate" required>
+            </div>
+            <button type="submit" class="btn-save">Simpan Pengeluaran</button>
+        </form>
+        <a href="index.html" class="btn-back"><i class="fas fa-chevron-left"></i> Kembali ke Dashboard</a>
+    </div>
+
+    <div class="report-card">
+        <div class="report-header">
+            <h2>Riwayat Laporan</h2>
+            <button onclick="hapusSemua()" style="background:none; border:none; color: #d9a88f; font-size: 11px; cursor:pointer; text-decoration: underline;">Reset Semua</button>
+        </div>
+        <div class="report-list" id="reportList"></div>
+    </div>
+</div>
+
+<script>
+    const activeUserEmail = localStorage.getItem('flux_currentUser');
+    const storageKey = `flux_transactions_${activeUserEmail}`;
+
+    if (!activeUserEmail) { window.location.href = 'login.html'; }
+
+    document.getElementById('expenseDate').valueAsDate = new Date();
+
+    // --- 1. FORMAT TITIK OTOMATIS ---
+    const amountInput = document.getElementById('expenseAmount');
+    amountInput.addEventListener('keyup', function(e) {
+        let cursorPostion = this.selectionStart;
+        let value = this.value.replace(/[^0-9]/g, '');
+        let originalLength = this.value.length;
+
+        if (value === "") { this.value = ""; return; }
+
+        let formatted = Number(value).toLocaleString('id-ID');
+        this.value = formatted;
+
+        let newLength = this.value.length;
+        cursorPostion = cursorPostion + (newLength - originalLength);
+        this.setSelectionRange(cursorPostion, cursorPostion);
+    });
+
+    // --- 2. TAMPILKAN DATA PENGELUARAN ---
+    function updateReportUI() {
+        const list = document.getElementById('reportList');
+        const transactions = JSON.parse(localStorage.getItem(storageKey)) || [];
+        
+        list.innerHTML = "";
+        // Ambil data bertipe 'out' (pengeluaran) saja
+        const outOnly = transactions.filter(t => t.type === 'out').reverse();
+
+        if (outOnly.length === 0) {
+            list.innerHTML = "<p style='color:#ccc; text-align:center; font-size:12px; margin-top:20px;'>Belum ada riwayat pengeluaran.</p>";
+            return;
+        }
+
+        outOnly.forEach(t => {
+            const div = document.createElement('div');
+            div.className = 'report-item';
+            div.innerHTML = `
+                <div class="report-info">
+                    <div style="font-weight:500;">${t.description}</div>
+                    <div style="font-size:11px; color:#aaa;">${t.date}</div>
+                </div>
+                <div class="amt">-Rp ${Number(t.amount).toLocaleString('id-ID')}</div>
+                <div class="btn-delete" onclick="hapusSatu(${t.id})">
+                    <i class="fas fa-trash-alt"></i>
+                </div>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    // --- 3. SIMPAN DATA ---
+    document.getElementById('expenseForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const desc = document.getElementById('expenseDesc').value;
+        const rawAmount = document.getElementById('expenseAmount').value.replace(/\./g, '');
+        const amount = Number(rawAmount);
+        const date = document.getElementById('expenseDate').value;
+
+        if (amount <= 0) { alert("Nominal harus lebih dari 0!"); return; }
+
+        let transactions = JSON.parse(localStorage.getItem(storageKey)) || [];
+        
+        transactions.push({ 
+            id: Date.now(), 
+            type: 'out', // Tipenya 'out' untuk pengeluaran
+            description: desc, 
+            amount: amount, 
+            date: date 
+        });
+        
+        localStorage.setItem(storageKey, JSON.stringify(transactions));
+
+        alert("Data pengeluaran berhasil disimpan!");
+        this.reset();
+        document.getElementById('expenseDate').valueAsDate = new Date();
+        updateReportUI();
+    });
+
+    // --- 4. HAPUS SATU ---
+    function hapusSatu(id) {
+        if(confirm("Hapus catatan ini?")) {
+            let transactions = JSON.parse(localStorage.getItem(storageKey)) || [];
+            const filtered = transactions.filter(t => t.id !== id);
+            localStorage.setItem(storageKey, JSON.stringify(filtered));
+            updateReportUI();
+        }
+    }
+
+    // --- 5. RESET SEMUA PENGELUARAN ---
+    function hapusSemua() {
+        if(confirm("Hapus semua riwayat pengeluaran? Data pemasukan akan tetap aman.")) {
+            let transactions = JSON.parse(localStorage.getItem(storageKey)) || [];
+            // Hanya sisakan data yang bertipe 'in' (pemasukan)
+            const remaining = transactions.filter(t => t.type !== 'out');
+            localStorage.setItem(storageKey, JSON.stringify(remaining));
+            updateReportUI();
+        }
+    }
+
+    updateReportUI();
+</script>
+</body>
+</html>

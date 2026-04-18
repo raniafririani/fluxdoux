@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FluxDoux - Edit Profil</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #f9f7f2;
+            --accent-color: #b5a48b;
+            --card-bg: #ffffff;
+            --text-main: #4a4a4a;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .profile-card {
+            background: var(--card-bg);
+            width: 90%;
+            max-width: 400px;
+            padding: 40px;
+            border-radius: 30px;
+            border: 1px solid #f0e9dc;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(181, 164, 139, 0.1);
+        }
+
+        .avatar-upload {
+            position: relative;
+            max-width: 120px;
+            margin: 0 auto 30px;
+        }
+
+        .avatar-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-color: var(--accent-color);
+            border: 4px solid #fff;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            overflow: hidden;
+        }
+
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .file-input { display: none; }
+
+        .upload-label {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: var(--accent-color);
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            border: 2px solid #fff;
+        }
+
+        .input-group { text-align: left; margin-bottom: 20px; }
+        label { font-size: 11px; font-weight: 600; color: var(--accent-color); text-transform: uppercase; margin-bottom: 8px; display: block; }
+        
+        input {
+            width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #eeeae0; outline: none; box-sizing: border-box; font-family: 'Poppins';
+        }
+
+        .btn-save {
+            background: var(--accent-color); color: white; border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: 600; cursor: pointer; margin-top: 10px;
+        }
+
+        .btn-back { display: block; margin-top: 20px; text-decoration: none; color: #aaa; font-size: 13px; }
+         /* --- RESPONSIVE HP --- */
+        @media (max-width: 480px) {
+            .profile-card { padding: 30px 20px; }
+            .header-title { font-size: 20px; }
+            .photo-container { width: 100px; height: 100px; }
+            .avatar-preview { width: 100px; height: 100px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="profile-card">
+    <h2 style="font-family: 'Playfair Display'; font-style: italic; color: var(--accent-color); margin-bottom: 25px;">Edit Profil</h2>
+
+    <div class="avatar-upload" style="text-align: center; margin-bottom: 20px;">
+    <div class="avatar" id="profilePreview" style="width: 100px; height: 100px; margin: 0 auto 10px; font-size: 40px;">pfp</div>
+    
+    <input type="file" id="photoInput" accept="image/*" style="display: none;">
+    <button type="button" onclick="document.getElementById('photoInput').click()" style="font-size: 12px; color: var(--accent-color); background: none; border: 1px solid; padding: 5px 10px; border-radius: 20px; cursor: pointer;">
+        Pilih Foto Baru
+    </button>
+</div>
+    <form id="profileForm">
+    <div class="input-group">
+        <label>Nama Lengkap</label>
+        <input type="text" id="fullname" placeholder="Nama Anda">
+    </div>
+    <div class="input-group">
+        <label>Email</label>
+        <input type="email" id="email" readonly style="background: #f0f0f0; cursor: not-allowed;">
+    </div>
+    <button type="submit" class="btn-save">Simpan Perubahan</button>
+</form>
+
+    <a href="index.html" class="btn-back"><i class="fas fa-arrow-left"></i> Kembali ke Dashboard</a>
+</div>
+<div class="avatar-wrapper">
+    <input type="file" id="photoInput" style="display:none;" accept="image/*">
+</div>
+<script>
+    // 1. Ambil email user aktif
+    const activeUserEmail = localStorage.getItem('flux_currentUser');
+    if (!activeUserEmail) {
+        window.location.href = 'login.html';
+    }
+
+    // Variabel sementara untuk foto baru
+    let selectedImageData = "";
+
+    // 2. Tampilkan data saat halaman dibuka
+    window.onload = function() {
+        const storedData = localStorage.getItem(`profile_${activeUserEmail}`);
+        if (storedData) {
+            const userData = JSON.parse(storedData);
+            document.getElementById('fullname').value = userData.name || "";
+            document.getElementById('email').value = activeUserEmail;
+            
+            // Munculkan foto lama di preview kalau ada
+            if (userData.photo) {
+                document.getElementById('profilePreview').innerHTML = 
+                    `<img src="${userData.photo}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+            }
+        }
+    };
+
+    // 3. Logika pilih foto (Base64)
+    document.getElementById('photoInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                selectedImageData = event.target.result;
+                document.getElementById('profilePreview').innerHTML = 
+                    `<img src="${selectedImageData}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // 4. LOGIKA SIMPAN (Versi Aman)
+    document.getElementById('profileForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const newName = document.getElementById('fullname').value;
+        
+        // AMBIL DATA LAMA supaya password & data lain tidak hilang
+        const rawOldData = localStorage.getItem(`profile_${activeUserEmail}`);
+        let oldData = rawOldData ? JSON.parse(rawOldData) : {};
+
+        // GABUNGKAN DATA
+        const updatedData = {
+            ...oldData, // Jaga password & data lama tetap ada
+            name: newName,
+            // Pakai foto baru jika ada, kalau tidak pakai yang lama, kalau gak ada kosongkan
+            photo: selectedImageData || oldData.photo || "" 
+        };
+
+        // SIMPAN HANYA UNTUK PROFIL (Jangan gunakan localStorage.clear()!)
+        localStorage.setItem(`profile_${activeUserEmail}`, JSON.stringify(updatedData));
+        
+        alert("Profil Berhasil Diperbarui!");
+        window.location.href = 'index.html';
+    });
+
+    function logout() {
+        if (confirm("Ingin keluar?")) {
+            localStorage.removeItem('flux_isLoggedIn');
+            localStorage.removeItem('flux_currentUser');
+            window.location.href = 'login.html';
+        }
+    }
+</script>
+</body>
+</html>
